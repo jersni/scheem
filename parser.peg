@@ -1,5 +1,8 @@
 start =
-    expression
+    ws? e:expression ws? {return e;}
+
+ws =
+    [ \n\t] ws*
 
 validchar = 
     [0-9a-zA-Z_?!+\-=@#$%^&*/.]
@@ -9,11 +12,10 @@ atom =
     { return chars.join(""); }
 
 spaceexpression =
-    " " e: expression { return e; }
+    ws e: expression { return e; }
 
 expression =
-    atom /
-    "(" ")" {return [];} /
-    "(" e: expression ")" {return [e];} /
-    "(" e: expression se: spaceexpression* ")" 
+    a:atom {return a;} /
+    "(" ws* ")" {return [];} /
+    "(" ws* e: expression se: spaceexpression* ws* ")"
     {return [e].concat(se);}
