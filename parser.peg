@@ -11,6 +11,9 @@ atom =
     chars:validchar+
     { return chars.join(""); }
 
+quote =
+    "'" e:expression { return ["quote", e]; }
+
 spaceexpression =
     ws e: expression { return e; }
 
@@ -18,4 +21,5 @@ expression =
     a:atom {return a;} /
     "(" ws* ")" {return [];} /
     "(" ws* e: expression se: spaceexpression* ws* ")"
-    {return [e].concat(se);}
+    {return [e].concat(se);} /
+    quote

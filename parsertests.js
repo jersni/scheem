@@ -16,5 +16,7 @@ assert.deepEqual( parse("(inneratom)"), ["inneratom"] );
 assert.deepEqual( parse("( a b c )"), ["a", "b", "c"] );
 assert.deepEqual( parse("(+ (+ 1 2) 2)"), ["+", ["+", "1", "2"], "2"] );
 assert.deepEqual( parse("(car\t(\nquote 1 2 3)\n)"), ["car", ["quote","1","2","3"]] );
-assert.deepEqual(parse("(   car ( cdr\t(\nquote   1 2 (+ 1 2)   3)   \n  ))"), 
+assert.deepEqual( parse("(   car ( cdr\t(\nquote   1 2 (+ 1 2)   3)   \n  ))"), 
          ["car", ["cdr", ["quote", "1", "2", ["+", "1", "2"], "3"]]]);
+assert.deepEqual( parse("'a"), ["quote", "a"] );
+assert.deepEqual( parse("'(a b c)"), ["quote", ["a", "b", "c"]] );
