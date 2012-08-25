@@ -2,7 +2,8 @@ start =
     ws? e:expression ws? {return e;}
 
 ws =
-    [ \n\t] ws*
+    [ \n\t] ws* /
+    ";;" [^\n]* "\n"? ws*
 
 validchar = 
     [0-9a-zA-Z_?!+\-=@#$%^&*/.]
