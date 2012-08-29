@@ -1,0 +1,144 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mocha Tests</title>
+  <link rel="stylesheet"
+    href="http://nathansuniversity.com/css/mocha.css" />
+  <script src="http://nathansuniversity.com/js/jquery-1.7.1.min.js">
+  </script>
+  <script src="http://nathansuniversity.com/js/chai.js">
+  </script>
+  <script src="http://nathansuniversity.com/js/mocha.js">
+  </script>
+  <script>mocha.setup('tdd')</script>
+  <script src="interpreter.js">
+  </script>
+  <script>
+    var assert = chai.assert;
+
+
+    // Some unit tests
+
+    suite('quote', function() {
+        test('a number', function() {
+            assert.deepEqual(
+                evalScheem(['quote', 3], {}),
+                3
+            );
+        });
+        test('an atom', function() {
+            assert.deepEqual(
+                evalScheem(['quote', 'dog'], {}),
+                'dog'
+            );
+        });
+        test('a list', function() {
+            assert.deepEqual(
+                evalScheem(['quote', [1, 2, 3]], {}),
+                [1, 2, 3]
+            );
+        });
+    });
+    suite('arithmetic', function() {
+        test('two numbers', function() {
+            assert.deepEqual(
+                evalScheem(['+', 3, 5], {}),
+                8
+            );
+        });
+        test('two and two', function() {
+            assert.deepEqual(
+                evalScheem(['+', 2, 2], {}),
+                4
+            );
+        });
+        test('a number and an expression', function() {
+            assert.deepEqual(
+                evalScheem(['+', 3, ['+', 2, 2]], {}),
+                7
+            );
+        });
+        test('subtraction', function() {
+            assert.deepEqual(
+                evalScheem(['-', 100, 88], {}),
+                12
+            );
+        });
+        test('multiply and divide', function() {
+            assert.deepEqual(
+                evalScheem(['/', ['*', 10, 10], ['*', 5, 5]], {}),
+                4
+            );
+        });
+    });
+    suite('cons, car, cdr', function() {
+        var consExpr = ['cons', 1, ['quote', [2, 3]]];
+
+        test('cons', function() {
+            assert.deepEqual(
+            evalScheem(consExpr, {}),
+                [1, 2, 3]
+            );
+        });
+        test('car', function() {
+            assert.deepEqual(
+            evalScheem(['car', consExpr], {}),
+                1
+            );
+        });
+        test('cdr', function() {
+            assert.deepEqual(
+            evalScheem(['cdr', consExpr], {}),
+                [2, 3]
+            );
+        });
+
+    });
+    suite('comparison', function() {
+        // remember, = is for numbers
+        test('=', function() { 
+            assert.deepEqual(
+            evalScheem(['=', 100, 100], {}), '#t');
+        });
+        test('<', function() {
+            assert.deepEqual(
+            evalScheem(['<', 10, 2], {}), '#f');
+        });
+    });
+    
+    suite('if test', function() {
+        test('if 1 == 2 the divide 1 by 0, else 1', function() { 
+            assert.deepEqual(
+            evalScheem(['if', ['=', 1, 2], ['/', 1, 0], 1 ], {}), 1);
+        });
+    });
+
+    suite('begin', function() {
+        test('begin block', function() { 
+            assert.deepEqual(
+            evalScheem(['begin', ['+', 1, 2], ['-', 1, 0], 1 ], {}), 1);
+        });
+        test('begin block with define', function() { 
+            assert.deepEqual(
+            evalScheem(['begin', ['define', 'a', 2], 2 ], {}), 2);
+        });
+        test('begin block with define, set, and initial env', function() { 
+            assert.deepEqual(
+            evalScheem(['begin', ['define', 'a', 2], ['set!', 'a', 3], ['+', "b", "a" ]], 
+                       {'b': 9}), 12);
+        });
+
+    });
+
+
+  </script>
+  <script>
+    $(function(){
+      mocha.run();
+    });
+  </script>
+</head>
+<body>
+  <div id="mocha"></div>
+</body>
+</html>
