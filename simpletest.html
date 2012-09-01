@@ -40,10 +40,34 @@
         });
     });
     suite('arithmetic', function() {
-        test('two numbers', function() {
+        test('three threes', function() {
             assert.deepEqual(
-                evalScheem(['+', 3, 5], {}),
-                8
+                evalScheem(['+', 3, 3, ['+', 1, 2]], {}),
+                9
+            );
+        });
+		test('one arg +', function() {
+            assert.deepEqual(
+                evalScheem(['+', 3], {}),
+                3
+            );
+        });
+		test('one arg -', function() {
+            assert.deepEqual(
+                evalScheem(['-', 3], {}),
+                -3
+            );
+        });
+		test('one arg *', function() {
+            assert.deepEqual(
+                evalScheem(['*', 3], {}),
+                3
+            );
+        });
+		test('one arg /', function() {
+            assert.deepEqual(
+                evalScheem(['/', 2], {}),
+                1 / 2
             );
         });
         test('two and two', function() {
@@ -72,23 +96,22 @@
         });
     });
     suite('cons, car, cdr', function() {
-        var consExpr = ['cons', 1, ['quote', [2, 3]]];
 
         test('cons', function() {
             assert.deepEqual(
-            evalScheem(consExpr, {}),
+            evalScheem(['cons', 1, ['quote', [2, 3]]], {}),
                 [1, 2, 3]
             );
         });
         test('car', function() {
             assert.deepEqual(
-            evalScheem(['car', consExpr], {}),
+            evalScheem(['car', ['cons', 1, ['quote', [2, 3]]]], {}),
                 1
             );
         });
         test('cdr', function() {
             assert.deepEqual(
-            evalScheem(['cdr', consExpr], {}),
+            evalScheem(['cdr', ['cons', 1, ['quote', [2, 3]]]], {}),
                 [2, 3]
             );
         });
@@ -103,6 +126,14 @@
         test('<', function() {
             assert.deepEqual(
             evalScheem(['<', 10, 2], {}), '#f');
+        });
+		test('1 < 2 < 3 should be #t', function() {
+            assert.deepEqual(
+            evalScheem(['<', 1, 2, 3], {}), '#t');
+        });
+		test('1 < 2 < 1 should be #f', function() {
+            assert.deepEqual(
+            evalScheem(['<', 1, 2, 1], {}), '#f');
         });
     });
     
@@ -130,6 +161,54 @@
 
     });
 
+	suite('Error handling', function() {
+		test('bad assign', function () {
+				assert.throws(function () {
+				    evalScheem(['define', "a", 2, 2], {});
+			});
+		});
+		test('assign to number', function () {
+				assert.throws(function () {
+				    evalScheem(['define', 1, 2], {});
+			});
+		});
+		test('good assign - list', function () {
+				assert.doesNotThrow(function () {
+				    evalScheem(['define', "a", ['quote', [2, 2]]], {});
+			});
+		});
+		test('good assign - atom', function () {
+				assert.doesNotThrow(function () {
+				    evalScheem(['define', "a", 1], {});
+			});
+		});
+		test('bad set! to undefined symbol', function () {
+				assert.throws(function () {
+				    evalScheem(['set!', "a", 1], {});
+			});
+		});
+		test('bad + - adding string that are not in env', function () {
+				assert.throws(function () {
+				    evalScheem(['+', "a", "a"], {});
+			});
+		});
+		test('good + - adding expressions with number values', function () {
+				assert.doesNotThrow(function () {
+				    evalScheem(['+', 1, ['-', 4, 2]], {});
+			});
+		});
+		test('good + - one argument', function () {
+				assert.doesNotThrow(function () {
+				    evalScheem(['+', 1], {});
+			});
+		});
+		test('good - : one argument', function () {
+				assert.doesNotThrow(function () {
+				    evalScheem(['-', 1], {});
+			});
+		});
+
+    });
 
   </script>
   <script>
