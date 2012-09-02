@@ -11,9 +11,14 @@
   <script src="http://nathansuniversity.com/js/mocha.js">
   </script>
   <script>mocha.setup('tdd')</script>
+  <script src="parser.js"></script>
   <script src="interpreter.js">
   </script>
   <script>
+    var evalScheemString = function(s, env) {
+        return evalScheem(SCHEEM.parse(s), env)
+    };
+
     var assert = chai.assert;
 
 
@@ -155,7 +160,7 @@
         });
         test('begin block with define, set, and initial env', function() { 
             assert.deepEqual(
-            evalScheem(['begin', ['define', 'a', 2], ['set!', 'a', 3], ['+', "b", "a" ]], 
+            evalScheem(['begin', ['define', 'a1', 2], ['set!', 'a1', 3], ['+', "b", "a1" ]], 
                        {'b': 9}), 12);
         });
 
@@ -184,7 +189,7 @@
 		});
 		test('bad set! to undefined symbol', function () {
 				assert.throws(function () {
-				    evalScheem(['set!', "a", 1], {});
+				    evalScheem(['set!', "a2", 1], {});
 			});
 		});
 		test('bad + - adding string that are not in env', function () {
@@ -208,6 +213,61 @@
 			});
 		});
 
+    });
+
+    suite('parse', function() {
+        test('a number', function() {
+            assert.deepEqual(
+                SCHEEM.parse('42'),
+                42
+            );
+        });
+	test('a variable', function() {
+	    assert.deepEqual(
+	    SCHEEM.parse('x'),
+	    'x'
+            );
+	});
+    });
+
+    suite('evalScheemString tests', function() {
+        test('a number', function() {
+            assert.deepEqual(
+                evalScheemString('42', {}),
+                42
+            );
+        });
+	test('add 2 and 2', function() {
+            assert.deepEqual(
+                evalScheemString('(+ 2 2)', {}),
+                4
+            );
+        });
+        test('cons 1 on to (2 3)', function() {
+            assert.deepEqual(
+                evalScheemString("(cons 1 '(2 3))", {}),
+                [1, 2, 3]
+            );
+        });
+        test('begin with define a as 2, then multiply a * a', function() {
+            assert.deepEqual(
+                evalScheemString("(begin (define a 2) (* a a) )", {}),
+                4
+            );
+        });
+        test('set a 2', function() {
+            assert.deepEqual(
+                evalScheemString("(set! a3 2)", {"a3": 0}),
+                0
+            );
+        });
+        test('begin with define, set! a = a + 2, and multiply', function() {
+            assert.deepEqual(
+                evalScheemString("(begin (define a 0) (set! a (+ a 2)) (* a a) )", {}),
+                4
+            );
+        });
+	
     });
 
   </script>

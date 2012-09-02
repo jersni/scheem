@@ -8,6 +8,9 @@ ws =
 validchar = 
     [0-9a-zA-Z_?!+\-=@#$%^&*/.]
 
+number =
+    n:[0-9]+ { return parseInt(n.join(""));}
+
 atom =
     chars:validchar+
     { return chars.join(""); }
@@ -19,6 +22,7 @@ spaceexpression =
     ws e: expression { return e; }
 
 expression =
+    n:number {return n;} /
     a:atom {return a;} /
     "(" ws* ")" {return [];} /
     "(" ws* e: expression se: spaceexpression* ws* ")"

@@ -1,16 +1,16 @@
 var checkMathExprTypes = function(expr, env) {
-    
-	// if we have a string, it must have a value defined in the Environment.
-	// Otherwise we have a number or object (array)
-	// numbers are OK, and arrays will get eval'ed further
-	for(var i = 0; i < expr.length; i++) {
-		if(typeof expr[i] === 'string') {
-			if(env[expr[i]]) { } // ok, there is a value defined
-			else {return false;}
-		}
-	}
 
-	return true;
+    // if we have a string, it must have a value defined in the Environment.
+    // Otherwise we have a number or object (array)
+    // numbers are OK, and arrays will get eval'ed further
+    for(var i = 0; i < expr.length; i++) {
+        if(typeof expr[i] === 'string') {
+            if(typeof env[expr[i]] === "undefined") { return false } 
+            else { } // ok, there is a value defined
+        }
+    }
+
+    return true;
 };
 
 var evalScheem = function (expr, env) {
@@ -26,42 +26,42 @@ var evalScheem = function (expr, env) {
 
     switch (expr[0]) {
         case 'define':
-			expr.shift();
-			if(expr.length != 2) { throw new Error("Wrong syntax for define. Expected exactly 2 arguments.");}
-			if(!(typeof expr[0] === 'string')) {throw new Error("define " + expr[0] + " Must set! to a symbol.");}
+            expr.shift();
+            if(expr.length != 2) { throw new Error("Wrong syntax for define. Expected exactly 2 arguments.");}
+            if(!(typeof expr[0] === 'string')) {throw new Error("define " + expr[0] + " Must define to a symbol.");}
             env[expr[0]] = evalScheem(expr[1], env);
             return 0;
         case 'set!':
-			expr.shift();
-			if(expr.length != 2) { throw new Error("Wrong syntax for set!. Expected exactly 2 arguments.");}
-			if(!(typeof expr[0] === 'string')) {throw new Error("set! " + expr[0] + " Must set! to a symbol.");}
-			if(!env[expr[0]] ) {throw new Error("set! " + expr[0] + " " + "is not defined");}
+            expr.shift();
+            if(expr.length != 2) { throw new Error("Wrong syntax for set!. Expected exactly 2 arguments.");}
+            if(!(typeof expr[0] === 'string')) {throw new Error("set! " + expr[0] + " Must set! to a symbol.");}
+            if(typeof env[expr[0]] === "undefined" ) {throw new Error("set! " + expr[0] + " " + "is not defined");}
             env[expr[0]] = evalScheem(expr[1], env);
             return 0;
         case '+':
-			expr.shift();
-			if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to +");}
-			return expr.reduce(function(a,b) {return evalScheem(a, env) + evalScheem(b, env);});
+            expr.shift();
+            if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to +");}
+            return expr.reduce(function(a,b) {return evalScheem(a, env) + evalScheem(b, env);});
         case '-':
-			expr.shift();
-			if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to -");}
-			if(expr.length === 1) {
-				return expr.reduce(function(a,b) {return evalScheem(a, env) - evalScheem(b, env);},0);
-			} else {
-				return expr.reduce(function(a,b) {return evalScheem(a, env) - evalScheem(b, env);});
-			}
+            expr.shift();
+            if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to -");}
+            if(expr.length === 1) {
+                return expr.reduce(function(a,b) {return evalScheem(a, env) - evalScheem(b, env);},0);
+            } else {
+                return expr.reduce(function(a,b) {return evalScheem(a, env) - evalScheem(b, env);});
+            }
         case '*':
-			expr.shift();
-			if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to *");}
+            expr.shift();
+            if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to *");}
             return expr.reduce(function(a,b) {return evalScheem(a, env) * evalScheem(b, env);});
         case '/':
-			expr.shift();
-			if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to /");}
-			if(expr.length === 1) {
-				return expr.reduce(function(a,b) {return evalScheem(a, env) / evalScheem(b, env);}, 1);
-			} else {
-				return expr.reduce(function(a,b) {return evalScheem(a, env) / evalScheem(b, env);});
-			}
+            expr.shift();
+            if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to /");}
+            if(expr.length === 1) {
+                return expr.reduce(function(a,b) {return evalScheem(a, env) / evalScheem(b, env);}, 1);
+            } else {
+                return expr.reduce(function(a,b) {return evalScheem(a, env) / evalScheem(b, env);});
+            }
         case 'begin':
             var lasti = expr.length - 1;
             for(var i = 1; i < expr.length; i++) {
@@ -72,34 +72,34 @@ var evalScheem = function (expr, env) {
                 }
             }
         case 'quote':
-			if(expr.length > 2) { throw new Error("Wrong number of arguments to quote.");}
+            if(expr.length > 2) { throw new Error("Wrong number of arguments to quote.");}
             return expr[1];
         case '<':
-			expr.shift();
+            expr.shift();
 
-			if(expr.length === 1) {
-				throw new Error("Wrong number of arguments to <. Expected at least 2 arguments");
-			} else {
-			
-				if(false === expr.reduce(function(a,b) {return evalScheem(a, env) < evalScheem(b, env) ? b : false; })) {
-					return '#f';
-				} else {
-					return '#t'
-				}
-			}
+            if(expr.length === 1) {
+                throw new Error("Wrong number of arguments to <. Expected at least 2 arguments");
+            } else {
+
+                if(false === expr.reduce(function(a,b) {return evalScheem(a, env) < evalScheem(b, env) ? b : false; })) {
+                    return '#f';
+                } else {
+                    return '#t'
+                }
+            }
 
         case '=':
             expr.shift();
-			if(expr.length === 1) {
-				throw new Error("Wrong number of arguments to =. Expected at least 2 arguments");
-			} else {
-			
-				if(false === expr.reduce(function(a,b) {return evalScheem(a, env) === evalScheem(b, env) ? b : false; })) {
-					return '#f';
-				} else {
-					return '#t'
-				}
-			}
+            if(expr.length === 1) {
+                throw new Error("Wrong number of arguments to =. Expected at least 2 arguments");
+            } else {
+
+                if(false === expr.reduce(function(a,b) {return evalScheem(a, env) === evalScheem(b, env) ? b : false; })) {
+                    return '#f';
+                } else {
+                    return '#t'
+                }
+            }
         case 'cons':
             expr.shift();
             if(expr.length != 2) { throw new Error("Wrong number of arguments to cons. Expected exactly 2"); } 
@@ -126,3 +126,6 @@ var evalScheem = function (expr, env) {
             }
     }
 };
+
+
+
