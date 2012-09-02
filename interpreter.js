@@ -1,18 +1,3 @@
-var checkMathExprTypes = function(expr, env) {
-
-    // if we have a string, it must have a value defined in the Environment.
-    // Otherwise we have a number or object (array)
-    // numbers are OK, and arrays will get eval'ed further
-    for(var i = 0; i < expr.length; i++) {
-        if(typeof expr[i] === 'string') {
-            if(typeof env[expr[i]] === "undefined") { return false } 
-            else { } // ok, there is a value defined
-        }
-    }
-
-    return true;
-};
-
 var evalScheem = function (expr, env) {
 
     // Numbers evaluate to themselves
@@ -20,48 +5,34 @@ var evalScheem = function (expr, env) {
         return expr;
     }
     if (typeof expr === 'string') {
-        return env[expr];
+        return lookup(env, expr);
     }
     // Look at head of list for operation
 
     switch (expr[0]) {
         case 'define':
-            expr.shift();
-            if(expr.length != 2) { throw new Error("Wrong syntax for define. Expected exactly 2 arguments.");}
-            if(!(typeof expr[0] === 'string')) {throw new Error("define " + expr[0] + " Must define to a symbol.");}
-            env[expr[0]] = evalScheem(expr[1], env);
+            
+            if(expr.length != 3) { throw new Error("Wrong syntax for define. Expected exactly 2 arguments.");}
+            if(!(typeof expr[1] === 'string')) {throw new Error("define " + expr[1] + " Must define to a symbol.");}
+            
+            add_binding(env, expr[1], evalScheem(expr[2], env));
+            
             return 0;
         case 'set!':
-            expr.shift();
-            if(expr.length != 2) { throw new Error("Wrong syntax for set!. Expected exactly 2 arguments.");}
-            if(!(typeof expr[0] === 'string')) {throw new Error("set! " + expr[0] + " Must set! to a symbol.");}
-            if(typeof env[expr[0]] === "undefined" ) {throw new Error("set! " + expr[0] + " " + "is not defined");}
-            env[expr[0]] = evalScheem(expr[1], env);
+            
+            if(expr.length != 3) { throw new Error("Wrong syntax for set!. Expected exactly 2 arguments.");}
+            if(!(typeof expr[1] === 'string')) {throw new Error("set! " + expr[1] + " Must set! to a symbol.");}
+            update(env, expr[1], evalScheem(expr[2], env));
+            
             return 0;
         case '+':
-            expr.shift();
-            if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to +");}
-            return expr.reduce(function(a,b) {return evalScheem(a, env) + evalScheem(b, env);});
+            return evalScheem(expr[1], env) + evalScheem(expr[2], env);
         case '-':
-            expr.shift();
-            if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to -");}
-            if(expr.length === 1) {
-                return expr.reduce(function(a,b) {return evalScheem(a, env) - evalScheem(b, env);},0);
-            } else {
-                return expr.reduce(function(a,b) {return evalScheem(a, env) - evalScheem(b, env);});
-            }
+            return evalScheem(expr[1], env) - evalScheem(expr[2], env);
         case '*':
-            expr.shift();
-            if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to *");}
-            return expr.reduce(function(a,b) {return evalScheem(a, env) * evalScheem(b, env);});
+             return evalScheem(expr[1], env) * evalScheem(expr[2], env);
         case '/':
-            expr.shift();
-            if(! checkMathExprTypes(expr, env)) {throw new Error("Bad arguments to /");}
-            if(expr.length === 1) {
-                return expr.reduce(function(a,b) {return evalScheem(a, env) / evalScheem(b, env);}, 1);
-            } else {
-                return expr.reduce(function(a,b) {return evalScheem(a, env) / evalScheem(b, env);});
-            }
+            return evalScheem(expr[1], env) / evalScheem(expr[2], env);
         case 'begin':
             var lasti = expr.length - 1;
             for(var i = 1; i < expr.length; i++) {
@@ -75,30 +46,17 @@ var evalScheem = function (expr, env) {
             if(expr.length > 2) { throw new Error("Wrong number of arguments to quote.");}
             return expr[1];
         case '<':
-            expr.shift();
-
-            if(expr.length === 1) {
-                throw new Error("Wrong number of arguments to <. Expected at least 2 arguments");
+            if( evalScheem(expr[1], env) < evalScheem(expr[2], env) ) {
+                    return '#t';
             } else {
-
-                if(false === expr.reduce(function(a,b) {return evalScheem(a, env) < evalScheem(b, env) ? b : false; })) {
-                    return '#f';
-                } else {
-                    return '#t'
-                }
+                return '#f'
             }
 
         case '=':
-            expr.shift();
-            if(expr.length === 1) {
-                throw new Error("Wrong number of arguments to =. Expected at least 2 arguments");
+            if( evalScheem(expr[1], env) === evalScheem(expr[2], env) ) {
+                return "#t";
             } else {
-
-                if(false === expr.reduce(function(a,b) {return evalScheem(a, env) === evalScheem(b, env) ? b : false; })) {
-                    return '#f';
-                } else {
-                    return '#t'
-                }
+                return "#f";
             }
         case 'cons':
             expr.shift();
@@ -117,15 +75,56 @@ var evalScheem = function (expr, env) {
             v.shift();
             return v;
         case 'if':
-            expr.shift();
-            if(expr.length != 3) { throw new Error("Wrong number of arguments to if. Expected exactly 3"); } 
-            if(evalScheem(expr[0], env) === '#t') {
-                return evalScheem(expr[1], env);
-            } else {
+            if(evalScheem(expr[1], env) === '#t') {
                 return evalScheem(expr[2], env);
+            } else {
+                return evalScheem(expr[3], env);
             }
+        case 'let-one':
+            var _var = expr[1];
+            var _expr = evalScheem(expr[2], env);
+            var _body = expr[3];
+            var bnds = {};
+            bnds[_var] = _expr;
+            var e = { bindings: bnds, outer: env };
+            return evalScheem(_body, e);
+        case 'lambda-one':
+            return function(arg) {
+                var bnds = {};
+                bnds[expr[1]] = arg;
+                var newenv = {bindings: bnds, outer: env};
+                return evalScheem(expr[2], newenv);
+            };
+        default:
+            var func = evalScheem(expr[0], env);
+            var arg = evalScheem(expr[1], env);
+            return func(arg);
     }
 };
 
 
+var lookup = function (env, v) {
+    if (!(env.hasOwnProperty('bindings')))
+        throw new Error(v + " not found");
+    if (env.bindings.hasOwnProperty(v))
+        return env.bindings[v];
+    return lookup(env.outer, v);
+};
 
+var update = function (env, v, val) {
+    if (!(env.hasOwnProperty('bindings')))
+        throw new Error(v + " not found");
+     if(typeof env.bindings[v] === "undefined") {
+        update(env.outer, v, val);
+    } else {
+        env.bindings[v] = val;
+    }
+};
+
+var add_binding = function (env, v, val) {
+    env.bindings[v] = val;
+};
+
+var evalScheemString = function(s, env) {
+    return evalScheem(SCHEEM.parse(s), env)
+};

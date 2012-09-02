@@ -11,91 +11,60 @@
   <script src="http://nathansuniversity.com/js/mocha.js">
   </script>
   <script>mocha.setup('tdd')</script>
-  <script src="parser.js"></script>
-  <script src="interpreter.js">
+  <script src="../parser.js"></script>
+  <script src="../interpreter.js">
   </script>
   <script>
-    var evalScheemString = function(s, env) {
-        return evalScheem(SCHEEM.parse(s), env)
-    };
+   
 
     var assert = chai.assert;
-
+    var initialEnv = {bindings:{}, outer: {}};
 
     // Some unit tests
 
     suite('quote', function() {
         test('a number', function() {
             assert.deepEqual(
-                evalScheem(['quote', 3], {}),
+                evalScheem(['quote', 3], initialEnv),
                 3
             );
         });
         test('an atom', function() {
             assert.deepEqual(
-                evalScheem(['quote', 'dog'], {}),
+                evalScheem(['quote', 'dog'], initialEnv),
                 'dog'
             );
         });
         test('a list', function() {
             assert.deepEqual(
-                evalScheem(['quote', [1, 2, 3]], {}),
+                evalScheem(['quote', [1, 2, 3]], initialEnv),
                 [1, 2, 3]
             );
         });
     });
     suite('arithmetic', function() {
-        test('three threes', function() {
+        test('three and three', function() {
             assert.deepEqual(
-                evalScheem(['+', 3, 3, ['+', 1, 2]], {}),
-                9
+                evalScheem(['+', 3, 3], initialEnv),
+                6
             );
         });
-		test('one arg +', function() {
-            assert.deepEqual(
-                evalScheem(['+', 3], {}),
-                3
-            );
-        });
-		test('one arg -', function() {
-            assert.deepEqual(
-                evalScheem(['-', 3], {}),
-                -3
-            );
-        });
-		test('one arg *', function() {
-            assert.deepEqual(
-                evalScheem(['*', 3], {}),
-                3
-            );
-        });
-		test('one arg /', function() {
-            assert.deepEqual(
-                evalScheem(['/', 2], {}),
-                1 / 2
-            );
-        });
-        test('two and two', function() {
-            assert.deepEqual(
-                evalScheem(['+', 2, 2], {}),
-                4
-            );
-        });
+
         test('a number and an expression', function() {
             assert.deepEqual(
-                evalScheem(['+', 3, ['+', 2, 2]], {}),
+                evalScheem(['+', 3, ['+', 2, 2]], initialEnv),
                 7
             );
         });
         test('subtraction', function() {
             assert.deepEqual(
-                evalScheem(['-', 100, 88], {}),
+                evalScheem(['-', 100, 88], initialEnv),
                 12
             );
         });
         test('multiply and divide', function() {
             assert.deepEqual(
-                evalScheem(['/', ['*', 10, 10], ['*', 5, 5]], {}),
+                evalScheem(['/', ['*', 10, 10], ['*', 5, 5]], initialEnv),
                 4
             );
         });
@@ -110,13 +79,13 @@
         });
         test('car', function() {
             assert.deepEqual(
-            evalScheem(['car', ['cons', 1, ['quote', [2, 3]]]], {}),
+            evalScheem(['car', ['cons', 1, ['quote', [2, 3]]]], initialEnv),
                 1
             );
         });
         test('cdr', function() {
             assert.deepEqual(
-            evalScheem(['cdr', ['cons', 1, ['quote', [2, 3]]]], {}),
+            evalScheem(['cdr', ['cons', 1, ['quote', [2, 3]]]], initialEnv),
                 [2, 3]
             );
         });
@@ -126,42 +95,42 @@
         // remember, = is for numbers
         test('=', function() { 
             assert.deepEqual(
-            evalScheem(['=', 100, 100], {}), '#t');
+            evalScheem(['=', 100, 100], initialEnv), '#t');
         });
         test('<', function() {
             assert.deepEqual(
-            evalScheem(['<', 10, 2], {}), '#f');
+            evalScheem(['<', 10, 2], initialEnv), '#f');
         });
 		test('1 < 2 < 3 should be #t', function() {
             assert.deepEqual(
-            evalScheem(['<', 1, 2, 3], {}), '#t');
+            evalScheem(['<', 1, 2, 3], initialEnv), '#t');
         });
-		test('1 < 2 < 1 should be #f', function() {
+	test('2 < 1 should be #f', function() {
             assert.deepEqual(
-            evalScheem(['<', 1, 2, 1], {}), '#f');
+            evalScheem(['<', 2, 1], initialEnv), '#f');
         });
     });
     
     suite('if test', function() {
         test('if 1 == 2 the divide 1 by 0, else 1', function() { 
             assert.deepEqual(
-            evalScheem(['if', ['=', 1, 2], ['/', 1, 0], 1 ], {}), 1);
+            evalScheem(['if', ['=', 1, 2], ['/', 1, 0], 1 ], initialEnv), 1);
         });
     });
 
     suite('begin', function() {
         test('begin block', function() { 
             assert.deepEqual(
-            evalScheem(['begin', ['+', 1, 2], ['-', 1, 0], 1 ], {}), 1);
+            evalScheem(['begin', ['+', 1, 2], ['-', 1, 0], 1 ], initialEnv), 1);
         });
         test('begin block with define', function() { 
             assert.deepEqual(
-            evalScheem(['begin', ['define', 'a', 2], 2 ], {}), 2);
+            evalScheem(['begin', ['define', 'a', 2], 2 ], initialEnv), 2);
         });
         test('begin block with define, set, and initial env', function() { 
             assert.deepEqual(
             evalScheem(['begin', ['define', 'a1', 2], ['set!', 'a1', 3], ['+', "b", "a1" ]], 
-                       {'b': 9}), 12);
+                       {bindings: {'b': 9}, outer: {}}), 12);
         });
 
     });
@@ -169,49 +138,36 @@
 	suite('Error handling', function() {
 		test('bad assign', function () {
 				assert.throws(function () {
-				    evalScheem(['define', "a", 2, 2], {});
+				    evalScheem(['define', "a", 2, 2], initialEnv);
 			});
 		});
 		test('assign to number', function () {
 				assert.throws(function () {
-				    evalScheem(['define', 1, 2], {});
+				    evalScheem(['define', 1, 2], initialEnv);
 			});
 		});
 		test('good assign - list', function () {
 				assert.doesNotThrow(function () {
-				    evalScheem(['define', "a", ['quote', [2, 2]]], {});
+				    evalScheem(['define', "a", ['quote', [2, 2]]], initialEnv);
 			});
 		});
 		test('good assign - atom', function () {
 				assert.doesNotThrow(function () {
-				    evalScheem(['define', "a", 1], {});
+				    evalScheem(['define', "a", 1], initialEnv);
 			});
 		});
 		test('bad set! to undefined symbol', function () {
 				assert.throws(function () {
-				    evalScheem(['set!', "a2", 1], {});
+				    evalScheem(['set!', "a2", 1], initialEnv);
 			});
 		});
-		test('bad + - adding string that are not in env', function () {
-				assert.throws(function () {
-				    evalScheem(['+', "a", "a"], {});
-			});
-		});
+		
 		test('good + - adding expressions with number values', function () {
 				assert.doesNotThrow(function () {
-				    evalScheem(['+', 1, ['-', 4, 2]], {});
+				    evalScheem(['+', 1, ['-', 4, 2]], initialEnv);
 			});
 		});
-		test('good + - one argument', function () {
-				assert.doesNotThrow(function () {
-				    evalScheem(['+', 1], {});
-			});
-		});
-		test('good - : one argument', function () {
-				assert.doesNotThrow(function () {
-				    evalScheem(['-', 1], {});
-			});
-		});
+		
 
     });
 
@@ -233,43 +189,81 @@
     suite('evalScheemString tests', function() {
         test('a number', function() {
             assert.deepEqual(
-                evalScheemString('42', {}),
+                evalScheemString('42', initialEnv),
                 42
             );
         });
 	test('add 2 and 2', function() {
             assert.deepEqual(
-                evalScheemString('(+ 2 2)', {}),
+                evalScheemString('(+ 2 2)', initialEnv),
                 4
             );
         });
         test('cons 1 on to (2 3)', function() {
             assert.deepEqual(
-                evalScheemString("(cons 1 '(2 3))", {}),
+                evalScheemString("(cons 1 '(2 3))", initialEnv),
                 [1, 2, 3]
             );
         });
         test('begin with define a as 2, then multiply a * a', function() {
             assert.deepEqual(
-                evalScheemString("(begin (define a 2) (* a a) )", {}),
+                evalScheemString("(begin (define a 2) (* a a) )", initialEnv),
                 4
             );
         });
         test('set a 2', function() {
             assert.deepEqual(
-                evalScheemString("(set! a3 2)", {"a3": 0}),
+                evalScheemString("(set! a3 2)", {bindings:{"a3": 0}, outer: {}}),
                 0
             );
         });
         test('begin with define, set! a = a + 2, and multiply', function() {
             assert.deepEqual(
-                evalScheemString("(begin (define a 0) (set! a (+ a 2)) (* a a) )", {}),
+                evalScheemString("(begin (define a 0) (set! a (+ a 2)) (* a a) )", initialEnv),
                 4
             );
         });
 	
     });
-
+    
+    suite('PEG generated parser', function() {
+    
+        test('parse string', function() {
+            assert.deepEqual( SCHEEM.parse("atom"), "atom" );
+        });
+        test('parse empty expr with whitespace', function() {
+            assert.deepEqual( SCHEEM.parse("( )"), [] );
+        });
+        test('parse atom inside parens', function() {
+            assert.deepEqual( SCHEEM.parse("(inneratom)"), ["inneratom"] );
+        });
+        test('parse list of atoms', function() {
+            assert.deepEqual( SCHEEM.parse("( a b c )"), ["a", "b", "c"] );
+        }); 
+        test('parse list containing lists and atoms', function() {
+           assert.deepEqual( SCHEEM.parse("(+ (+ 1 2) 2)"), ["+", ["+", 1, 2], 2] );
+        });
+        test('parse with newlines', function() {
+            assert.deepEqual( SCHEEM.parse("(car\t(\nquote 1 2 3)\n)"), ["car", ["quote",1,2,3]] );
+        });
+        test('parse tabs', function() {
+            assert.deepEqual( SCHEEM.parse("(   car ( cdr\t(\nquote   1 2 (+ 1 2)   3)   \n  ))"), 
+             ["car", ["cdr", ["quote", 1, 2, ["+", 1, 2], 3]]]);
+        });
+        test('parse quoted atom', function() {
+            assert.deepEqual( SCHEEM.parse("'a"), ["quote", "a"] );
+        });
+        test('parse quoted expression', function() {
+            assert.deepEqual( SCHEEM.parse("'(a b c)"), ["quote", ["a", "b", "c"]] );
+        });
+        test('parse commented line followed by newline with atom', function() {
+            assert.deepEqual( SCHEEM.parse(";; Comment\na"), "a" );
+        });
+        test('expression surrounded by comments (expression is on its own line)', function() {
+            var commentIn = ";; comment\n" + "(1 2 3);; comment after";
+            assert.deepEqual( SCHEEM.parse(commentIn), [1, 2, 3] );
+        });
+    });
   </script>
   <script>
     $(function(){
